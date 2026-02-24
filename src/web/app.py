@@ -143,6 +143,11 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
     before_files = set(output_dir.glob("*"))
     
     cmd = [str(pigeon_path), tos_key]
+    
+    print(f"[DEBUG] 执行pigeon: {cmd}")
+    print(f"[DEBUG] 工作目录: {output_dir}")
+    print(f"[DEBUG] tos_key: {tos_key}")
+    
     try:
         result = subprocess.run(
             cmd, 
@@ -151,6 +156,11 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
             text=True,
             timeout=300
         )
+        
+        print(f"[DEBUG] pigeon退出码: {result.returncode}")
+        print(f"[DEBUG] pigeon stdout: {result.stdout}")
+        print(f"[DEBUG] pigeon stderr: {result.stderr}")
+        
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout or "未知错误"
             raise RuntimeError(f"pigeon执行失败 (exit code {result.returncode}): {error_msg}")
@@ -162,7 +172,13 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
     after_files = set(output_dir.glob("*"))
     new_files = after_files - before_files
     
+    print(f"[DEBUG] 执行前文件数: {len(before_files)}")
+    print(f"[DEBUG] 执行后文件数: {len(after_files)}")
+    print(f"[DEBUG] 新增文件: {[f.name for f in new_files]}")
+    
     if not new_files:
+        all_files = list(output_dir.glob("*"))
+        print(f"[DEBUG] 目录中所有文件: {[f.name for f in all_files]}")
         raise RuntimeError("未找到新生成的文件，请检查pigeon可执行文件是否正常工作")
     
     latest_file = max(new_files, key=lambda p: p.stat().st_mtime)
