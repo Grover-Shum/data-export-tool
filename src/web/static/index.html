@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商客服数据导出工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .example {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .example strong {
+            color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        
+        .files-section {
+            margin-top: 30px;
+        }
+        
+        .files-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: box-shadow 0.2s;
+        }
+        
+        .file-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .file-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .btn-download {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-download:hover {
+            background: #218838;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .empty-state p {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 电商客服数据导出工具</h1>
+            <p>使用自然语言快速导出客服对话数据</p>
+        </div>
+        
+        <div class="card">
+            <div class="input-group">
+                <label for="command">输入导出命令：</label>
+                <textarea id="command" placeholder="请输入导出命令..."></textarea>
+                <div class="example">
+                    <strong>示例：</strong>请帮我导出修丽可官方旗舰店店铺ID为8226405从2026年2月9日10点到2026年2月9日17点的数据
+                </div>
+            </div>
+            
+            <button class="btn" id="exportBtn" onclick="exportData()">
+                开始导出
+            </button>
+            
+            <div id="status" class="status"></div>
+        </div>
+        
+        <div class="card files-section">
+            <h2>📁 已导出的文件</h2>
+            <div id="filesList"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.origin;
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+        }
+        
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+        
+        async function exportData() {
+            const command = document.getElementById('command').value.trim();
+            
+            if (!command) {
+                showStatus('请输入导出命令', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('exportBtn');
+            const originalText = btn.textContent;
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading"></span>正在导出...';
+                showStatus('正在处理您的请求，请稍候...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/export`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: command })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showStatus(`✅ ${result.message} - 店铺: ${result.data.shop_name}, 时间: ${result.data.start_time} 至 ${result.data.end_time}`, 'success');
+                    loadFiles();
+                    
+                    setTimeout(() => {
+                        window.location.href = result.data.download_url;
+                    }, 1000);
+                } else {
+                    const errorMsg = result.detail || '导出失败，请检查命令格式';
+                    showStatus(`❌ ${errorMsg}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ 网络错误: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+        
+        async function loadFiles() {
+            try {
+                const response = await fetch(`${API_BASE}/api/files`);
+                const result = await response.json();
+                
+                const filesList = document.getElementById('filesList');
+                
+                if (result.files.length === 0) {
+                    filesList.innerHTML = `
+                        <div class="empty-state">
+                            <p>暂无已导出的文件</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                filesList.innerHTML = result.files.map(file => `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">${file.filename}</div>
+                            <div class="file-meta">
+                                大小: ${(file.size / 1024).toFixed(2)} KB | 
+                                创建时间: ${new Date(file.created_at).toLocaleString('zh-CN')}
+                            </div>
+                        </div>
+                        <a href="${file.download_url}" class="btn-download" download>
+                            下载
+                        </a>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+            }
+        }
+        
+        document.getElementById('command').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                exportData();
+            }
+        });
+        
+        loadFiles();
+    </script>
+</body>
+</html>
