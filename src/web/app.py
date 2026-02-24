@@ -135,13 +135,27 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
         raise RuntimeError(f"可执行文件不存在: {pigeon_path}")
     
     if not os.access(pigeon_path, os.X_OK):
-        pigeon_path.chmod(0o755)
+        try:
+            pigeon_path.chmod(0o755)
+        except Exception as e:
+            raise RuntimeError(f"设置可执行权限失败: {e}")
     
     before_files = set(output_dir.glob("*"))
     
     cmd = [str(pigeon_path), tos_key]
     try:
-        subprocess.check_call(cmd, cwd=str(output_dir), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(
+            cmd, 
+            cwd=str(output_dir), 
+            capture_output=True, 
+            text=True,
+            timeout=300
+        )
+        if result.returncode != 0:
+            error_msg = result.stderr or result.stdout or "未知错误"
+            raise RuntimeError(f"pigeon执行失败 (exit code {result.returncode}): {error_msg}")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("pigeon执行超时（超过300秒）")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"执行pigeon下载失败: {e}")
     
@@ -149,7 +163,7 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
     new_files = after_files - before_files
     
     if not new_files:
-        raise RuntimeError("未找到新生成的文件")
+        raise RuntimeError("未找到新生成的文件，请检查pigeon可执行文件是否正常工作")
     
     latest_file = max(new_files, key=lambda p: p.stat().st_mtime)
     return latest_file
@@ -189,25 +203,31 @@ async def export_data(request: ExportRequest):
         start_ms = to_timestamp_ms(parsed["start_time"])
         end_ms = to_timestamp_ms(parsed["end_time"])
         
-        tos_key = call_data_download(parsed["shop_id"], start_ms, end_ms)
+        try:
+            tos_key = call_data_download(parsed["shop_id"], start_ms, end_ms)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取数据下载密钥失败: {str(e)}")
         
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            downloaded_file = run_pigeon_download(tos_key, temp_path)
-            
-            time_range_label = format_chinese_range(parsed["start_time"], parsed["end_time"])
-            final_filename = f"{parsed['shop_name']}{time_range_label}标注数据.xlsx"
-            
-            file_id = str(uuid.uuid4())
-            temp_file_path = TEMP_EXPORT_DIR / f"{file_id}.xlsx"
-            
-            shutil.copy2(downloaded_file, temp_file_path)
-            
-            file_cache[file_id] = {
-                "path": temp_file_path,
-                "filename": final_filename,
-                "created_at": datetime.now()
-            }
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                downloaded_file = run_pigeon_download(tos_key, temp_path)
+                
+                time_range_label = format_chinese_range(parsed["start_time"], parsed["end_time"])
+                final_filename = f"{parsed['shop_name']}{time_range_label}标注数据.xlsx"
+                
+                file_id = str(uuid.uuid4())
+                temp_file_path = TEMP_EXPORT_DIR / f"{file_id}.xlsx"
+                
+                shutil.copy2(downloaded_file, temp_file_path)
+                
+                file_cache[file_id] = {
+                    "path": temp_file_path,
+                    "filename": final_filename,
+                    "created_at": datetime.now()
+                }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"文件下载失败: {str(e)}")
         
         return {
             "success": True,
