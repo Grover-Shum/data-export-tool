@@ -13,9 +13,9 @@ COPY src/ /app/src/
 
 RUN mkdir -p /tmp/data_export_temp
 
-EXPOSE $PORT
-
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
+
+EXPOSE 8000
 
 CMD ["python", "src/web/run_server.py"]
