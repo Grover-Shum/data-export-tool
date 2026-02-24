@@ -142,7 +142,7 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
     
     before_files = set(output_dir.glob("*"))
     
-    cmd = [str(pigeon_path), tos_key]
+    cmd = [str(pigeon_path), "-download", tos_key]
     
     print(f"[DEBUG] 执行pigeon: {cmd}")
     print(f"[DEBUG] 工作目录: {output_dir}")
