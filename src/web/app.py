@@ -8,6 +8,7 @@ from typing import Optional
 from datetime import datetime, timezone
 import uuid
 import platform
+from urllib.parse import quote
 
 try:
     from zoneinfo import ZoneInfo
@@ -304,10 +305,14 @@ async def download_file(file_id: str):
             except Exception:
                 pass
     
+    encoded_filename = quote(filename)
+    
     return StreamingResponse(
         iterfile(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+        }
     )
 
 
