@@ -181,7 +181,20 @@ def run_pigeon_download(tos_key: str, output_dir: Path) -> Path:
         print(f"[DEBUG] 目录中所有文件: {[f.name for f in all_files]}")
         raise RuntimeError("未找到新生成的文件，请检查pigeon可执行文件是否正常工作")
     
-    latest_file = max(new_files, key=lambda p: p.stat().st_mtime)
+    latest_item = max(new_files, key=lambda p: p.stat().st_mtime)
+    
+    if latest_item.is_dir():
+        print(f"[DEBUG] 检测到目录: {latest_item}")
+        xlsx_files = list(latest_item.glob("*.xlsx"))
+        print(f"[DEBUG] 目录中的xlsx文件: {[f.name for f in xlsx_files]}")
+        
+        if not xlsx_files:
+            raise RuntimeError(f"目录 {latest_item.name} 中没有找到xlsx文件")
+        
+        latest_file = max(xlsx_files, key=lambda p: p.stat().st_mtime)
+    else:
+        latest_file = latest_item
+    
     return latest_file
 
 
