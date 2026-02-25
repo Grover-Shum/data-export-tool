@@ -58,10 +58,7 @@ def validate_time_range(start_time: str, end_time: str) -> Tuple[bool, str]:
         
         if end_dt <= start_dt:
             return False, "结束时间必须大于开始时间"
-        
-        if end_dt > datetime.now():
-            return False, "结束时间不能晚于当前时间"
-        
+
         time_diff = (end_dt - start_dt).total_seconds() / 3600
         if time_diff > 168:
             return False, "时间范围不能超过7天（168小时）"
